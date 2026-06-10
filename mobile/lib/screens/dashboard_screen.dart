@@ -1,84 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/wallet_provider.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
-
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  final List<Map<String, dynamic>> _transactions = [
-    {
-      'id': 1,
-      'name': 'Netflix Subscription',
-      'type': 'expense',
-      'amount': 15.99,
-      'date': 'Today, 10:00 AM'
-    },
-    {
-      'id': 2,
-      'name': 'Salary Deposit',
-      'type': 'income',
-      'amount': 4500.00,
-      'date': 'Yesterday, 09:00 AM'
-    },
-    {
-      'id': 3,
-      'name': 'Coffee Shop',
-      'type': 'expense',
-      'amount': 4.50,
-      'date': 'May 10, 08:30 AM'
-    },
-    {
-      'id': 4,
-      'name': 'Freelance Payment',
-      'type': 'income',
-      'amount': 350.00,
-      'date': 'May 09, 02:15 PM'
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0D0F14),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row
-              _buildHeader(),
-              const SizedBox(height: 24),
+      body: Consumer<WalletProvider>(
+        builder: (context, wallet, child) {
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Row
+                  _buildHeader(context),
+                  const SizedBox(height: 24),
 
-              // Total Balance Card
-              _buildBalanceCard(),
-              const SizedBox(height: 24),
+                  // Total Balance Card
+                  _buildBalanceCard(wallet),
+                  const SizedBox(height: 24),
 
-              // Income / Expense Stats
-              _buildStatsRow(),
-              const SizedBox(height: 24),
+                  // Income / Expense Stats
+                  _buildStatsRow(wallet),
+                  const SizedBox(height: 24),
 
-              // Quick Actions
-              _buildQuickActions(),
-              const SizedBox(height: 28),
+                  // Quick Actions
+                  _buildQuickActions(context),
+                  const SizedBox(height: 28),
 
-              // Custom Neon Chart Section
-              _buildChartSection(),
-              const SizedBox(height: 28),
+                  // Custom Neon Chart Section
+                  _buildChartSection(),
+                  const SizedBox(height: 28),
 
-              // Recent Transactions
-              _buildRecentTransactions(),
-            ],
-          ),
-        ),
+                  // Recent Transactions
+                  _buildRecentTransactions(context, wallet),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -86,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Good morning, John! 👋',
+              'Good morning, Bro! 👋',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withOpacity(0.5),
@@ -118,21 +89,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF00F2FE), Color(0xFF8A2BE2)],
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/profile'),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00F2FE), Color(0xFF8A2BE2)],
+                  ),
                 ),
-              ),
-              child: const Center(
-                child: Text(
-                  'JD',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                child: const Center(
+                  child: Text(
+                    'BRO',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -143,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildBalanceCard() {
+  Widget _buildBalanceCard(WalletProvider wallet) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -193,9 +167,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             shaderCallback: (bounds) => const LinearGradient(
               colors: [Colors.white, Color(0xFFE0E5FF)],
             ).createShader(bounds),
-            child: const Text(
-              '\$12,450.00',
-              style: TextStyle(
+            child: Text(
+              '\$${wallet.balance.toStringAsFixed(2)}',
+              style: const TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -226,7 +200,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(WalletProvider wallet) {
     return Row(
       children: [
         Expanded(
@@ -263,9 +237,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '\$4,850.00',
-                      style: TextStyle(
+                    Text(
+                      '\$${wallet.income.toStringAsFixed(2)}',
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -311,9 +285,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '\$1,240.50',
-                      style: TextStyle(
+                    Text(
+                      '\$${wallet.expense.toStringAsFixed(2)}',
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -328,13 +302,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
     final actions = [
-      {'icon': Icons.qr_code_scanner_rounded, 'label': 'Scan to Pay'},
-      {'icon': Icons.swap_horiz_rounded, 'label': 'Transfer'},
-      {'icon': Icons.account_balance_wallet_rounded, 'label': 'Balance'},
-      {'icon': Icons.notifications_rounded, 'label': 'Alerts'},
-      {'icon': Icons.star_rounded, 'label': 'Rewards'},
+      {'icon': Icons.add_card_rounded, 'label': 'Top Up', 'route': '/topup'},
+      {'icon': Icons.swap_horiz_rounded, 'label': 'Transfer', 'route': '/transfer'},
+      {'icon': Icons.money_off_rounded, 'label': 'Withdraw', 'route': '/withdraw'},
+      {'icon': Icons.history_rounded, 'label': 'History', 'route': '/history'},
     ];
 
     return Column(
@@ -351,8 +324,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return Column(
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.04),
                     borderRadius: BorderRadius.circular(16),
@@ -361,7 +334,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   child: IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushNamed(context, action['route'] as String);
+                    },
                     icon: Icon(
                       action['icon'] as IconData,
                       color: const Color(0xFF00F2FE),
@@ -411,7 +386,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Income',
+                    'Balance',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withOpacity(0.6),
@@ -433,7 +408,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildRecentTransactions() {
+  Widget _buildRecentTransactions(BuildContext context, WalletProvider wallet) {
+    final recentTx = wallet.transactions.take(5).toList();
+
     return Column(
       children: [
         Row(
@@ -447,95 +424,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () => Navigator.pushNamed(context, '/history'),
               child: const Text(
-                'View All',
+                'See All',
                 style: TextStyle(color: Color(0xFF00F2FE)),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _transactions.length,
-          itemBuilder: (context, index) {
-            final tx = _transactions[index];
-            final isIncome = tx['type'] == 'income';
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.02),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.04)),
+        if (recentTx.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'No transactions yet',
+                style: TextStyle(color: Colors.white54),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: isIncome
-                              ? const Color(0xFF10B981).withOpacity(0.1)
-                              : const Color(0xFFEF4444).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          isIncome
-                              ? Icons.arrow_downward_rounded
-                              : Icons.arrow_upward_rounded,
-                          color: isIncome
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFFEF4444),
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tx['name'] as String,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: recentTx.length,
+            itemBuilder: (context, index) {
+              final tx = recentTx[index];
+              final isIncome = tx.type == 'income';
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.02),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.04)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isIncome
+                                ? const Color(0xFF10B981).withOpacity(0.1)
+                                : const Color(0xFFEF4444).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            tx['date'] as String,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.5),
-                            ),
+                          child: Icon(
+                            isIncome
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: isIncome
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFEF4444),
+                            size: 18,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${isIncome ? '+' : '-'}\$${(tx['amount'] as double).toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: isIncome ? const Color(0xFF10B981) : Colors.white,
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tx.name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              tx.category,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                    Text(
+                      '${isIncome ? '+' : '-'}\$${tx.amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isIncome ? const Color(0xFF10B981) : Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
       ],
     );
   }
 }
 
-// Custom Painter for a beautiful Neon Line Chart that compiles out of the box
 class NeonLineChart extends StatelessWidget {
   const NeonLineChart({super.key});
 
@@ -554,7 +541,6 @@ class _NeonChartPainter extends CustomPainter {
     final width = size.width;
     final height = size.height;
 
-    // Draw grid horizontal lines
     final gridPaint = Paint()
       ..color = Colors.white.withOpacity(0.04)
       ..strokeWidth = 1;
@@ -564,7 +550,6 @@ class _NeonChartPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(width, y), gridPaint);
     }
 
-    // Data points (normalized 0 to 1)
     final points = [
       const Offset(0.0, 0.7),
       const Offset(0.16, 0.8),
@@ -575,12 +560,10 @@ class _NeonChartPainter extends CustomPainter {
       const Offset(1.0, 0.15),
     ];
 
-    // Map normalized points to canvas dimensions
     final actualPoints = points.map((p) {
       return Offset(p.dx * width, p.dy * height);
     }).toList();
 
-    // Create curved path (Bezier curve interpolation)
     final path = Path();
     path.moveTo(actualPoints[0].dx, actualPoints[0].dy);
 
@@ -599,13 +582,11 @@ class _NeonChartPainter extends CustomPainter {
       );
     }
 
-    // Create closed path for gradient area underneath
     final areaPath = Path.from(path);
     areaPath.lineTo(width, height);
     areaPath.lineTo(0, height);
     areaPath.close();
 
-    // Draw gradient area
     final areaPaint = Paint()
       ..shader = LinearGradient(
         colors: [
@@ -618,7 +599,6 @@ class _NeonChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(areaPath, areaPaint);
 
-    // Draw neon blur glow (draw same path slightly thicker and blurrier)
     final glowPaint = Paint()
       ..shader = const LinearGradient(
         colors: [Color(0xFF00F2FE), Color(0xFF8A2BE2)],
@@ -629,7 +609,6 @@ class _NeonChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, glowPaint);
 
-    // Draw main sharp neon line
     final linePaint = Paint()
       ..shader = const LinearGradient(
         colors: [Color(0xFF00F2FE), Color(0xFF8A2BE2)],
@@ -639,7 +618,6 @@ class _NeonChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, linePaint);
 
-    // Draw dot nodes and active glow on the nodes
     final dotPaint = Paint()
       ..color = const Color(0xFF00F2FE)
       ..style = PaintingStyle.fill;
@@ -655,7 +633,6 @@ class _NeonChartPainter extends CustomPainter {
 
     for (int i = 0; i < actualPoints.length; i++) {
       final p = actualPoints[i];
-      // Glowing outer ring for highlights
       if (i == 4 || i == 6) {
         canvas.drawCircle(p, 8, dotGlowPaint);
       }

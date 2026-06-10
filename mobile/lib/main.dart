@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/wallet_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/top_up_screen.dart';
+import 'screens/transfer_screen.dart';
+import 'screens/withdraw_screen.dart';
+import 'screens/transaction_history_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() {
-  runApp(const BroPayApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => WalletProvider()),
+      ],
+      child: const BroPayApp(),
+    ),
+  );
 }
 
 class BroPayApp extends StatelessWidget {
@@ -57,6 +71,11 @@ class BroPayApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => const DashboardScreen(),
+        '/topup': (context) => const TopUpScreen(),
+        '/transfer': (context) => const TransferScreen(),
+        '/withdraw': (context) => const WithdrawScreen(),
+        '/history': (context) => const TransactionHistoryScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

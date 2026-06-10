@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Wallet, 
@@ -12,19 +12,91 @@ import {
 } from 'lucide-react';
 import '../styles/dashboard.css';
 
+interface Transaction {
+  id: number;
+  name: string;
+  type: string;
+  amount: number;
+  date: string;
+}
+
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [balance, setBalance] = useState<number>(0);
+  const [income, setIncome] = useState<number>(0);
+  const [expense, setExpense] = useState<number>(0);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [userName, setUserName] = useState<string>('John Doe');
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/dashboard');
+      if (response.ok) {
+        const data = await response.json();
+        setBalance(data.balance);
+        setIncome(data.income);
+        setExpense(data.expense);
+        setTransactions(data.transactions);
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data', err);
+    }
+  };
+
+  useEffect(() => {
+    // Get user info
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed && parsed.name) {
+          setUserName(parsed.name);
+        }
+      } catch (e) {
+        // use default
+      }
+    }
+    
+    fetchDashboardData();
+  }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/login');
   };
 
-  const transactions = [
-    { id: 1, name: 'Netflix Subscription', type: 'expense', amount: 15.99, date: 'Today, 10:00 AM' },
-    { id: 2, name: 'Salary Deposit', type: 'income', amount: 4500.00, date: 'Yesterday, 09:00 AM' },
-    { id: 3, name: 'Coffee Shop', type: 'expense', amount: 4.50, date: 'May 10, 08:30 AM' },
-    { id: 4, name: 'Freelance Payment', type: 'income', amount: 350.00, date: 'May 09, 02:15 PM' },
-  ];
+  const handleTransfer = async () => {
+    const name = prompt('Enter recipient / sender name:');
+    if (!name) return;
+
+    const amountStr = prompt('Enter amount ($):');
+    if (!amountStr) return;
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Invalid amount');
+      return;
+    }
+
+    const type = confirm('Is this an Income? (Cancel for Expense)') ? 'income' : 'expense';
+
+    try {
+      const response = await fetch('http://localhost:3000/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, type, amount }),
+      });
+      if (response.ok) {
+        alert('Transaction successful!');
+        fetchDashboardData();
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Transaction failed');
+      }
+    } catch (err) {
+      alert('Cannot connect to the server');
+    }
+  };
 
   return (
     <div className="dashboard-layout">
@@ -40,10 +112,10 @@ const Dashboard: React.FC = () => {
             <Activity size={20} />
             <span>Overview</span>
           </a>
-          <a href="#" className="nav-item">
+          <button className="nav-item" onClick={handleTransfer} style={{ background: 'none', border: 'none', width: '100%', cursor: 'pointer' }}>
             <Send size={20} />
             <span>Transfers</span>
-          </a>
+          </button>
           <a href="#" className="nav-item">
             <Wallet size={20} />
             <span>Wallets</span>
@@ -71,14 +143,16 @@ const Dashboard: React.FC = () => {
               <Bell size={20} />
             </button>
             <div className="user-profile">
-              <div className="avatar">JD</div>
+              <div className="avatar">
+                {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Dashboard Content */}
         <div className="dashboard-content">
-          <h1 className="greeting">Good morning, John! 👋</h1>
+          <h1 className="greeting">Good morning, {userName.split(' ')[0]}! 👋</h1>
           
           <div className="stats-grid">
             <div className="stat-card total-balance">
@@ -86,7 +160,7 @@ const Dashboard: React.FC = () => {
                 <h3>Total Balance</h3>
                 <Wallet className="stat-icon" size={24} />
               </div>
-              <h2>$12,450.00</h2>
+              <h2>${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
               <p className="trend positive">+2.5% from last month</p>
             </div>
             
@@ -97,7 +171,7 @@ const Dashboard: React.FC = () => {
                   <ArrowDownLeft size={24} />
                 </div>
               </div>
-              <h2>$4,850.00</h2>
+              <h2>${income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
             </div>
             
             <div className="stat-card">
@@ -107,14 +181,14 @@ const Dashboard: React.FC = () => {
                   <ArrowUpRight size={24} />
                 </div>
               </div>
-              <h2>$1,240.50</h2>
+              <h2>${expense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
             </div>
           </div>
 
           <div className="transactions-section">
             <div className="section-header">
               <h3>Recent Transactions</h3>
-              <button className="view-all">View All</button>
+              <button className="view-all" onClick={handleTransfer}>Add Transaction</button>
             </div>
             
             <div className="transactions-list">

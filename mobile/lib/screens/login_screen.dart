@@ -11,6 +11,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -19,8 +20,20 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      // Simulate network request
+      await Future.delayed(const Duration(seconds: 1));
+      
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      
       Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
@@ -177,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                             child: ElevatedButton(
-                              onPressed: _handleLogin,
+                              onPressed: _isLoading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 shadowColor: Colors.transparent,
@@ -185,19 +198,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    'Sign In',
-                                    style: TextStyle(
+                                    _isLoading ? 'Signing In...' : 'Sign In',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                                  if (!_isLoading) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                                  ]
                                 ],
                               ),
                             ),
