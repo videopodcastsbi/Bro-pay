@@ -13,7 +13,7 @@ class _TransferScreenState extends State<TransferScreen> {
   final _amountController = TextEditingController();
   final _recipientController = TextEditingController();
 
-  void _handleTransfer() {
+  void _handleTransfer() async {
     final amount = double.tryParse(_amountController.text);
     final recipient = _recipientController.text.trim();
 
@@ -31,7 +31,8 @@ class _TransferScreenState extends State<TransferScreen> {
       return;
     }
 
-    final success = context.read<WalletProvider>().transfer(amount, recipient);
+    final success = await context.read<WalletProvider>().transfer(amount, recipient);
+    if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Transfer Successful!'), backgroundColor: Color(0xFF10B981)),

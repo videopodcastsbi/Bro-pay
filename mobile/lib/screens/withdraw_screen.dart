@@ -12,7 +12,7 @@ class WithdrawScreen extends StatefulWidget {
 class _WithdrawScreenState extends State<WithdrawScreen> {
   final _amountController = TextEditingController();
 
-  void _handleWithdraw() {
+  void _handleWithdraw() async {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -21,7 +21,8 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       return;
     }
 
-    final success = context.read<WalletProvider>().withdraw(amount, 'Bank Account');
+    final success = await context.read<WalletProvider>().withdraw(amount, 'Bank Account');
+    if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Withdrawal Successful!'), backgroundColor: Color(0xFF10B981)),

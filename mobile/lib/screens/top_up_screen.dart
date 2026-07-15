@@ -12,7 +12,7 @@ class TopUpScreen extends StatefulWidget {
 class _TopUpScreenState extends State<TopUpScreen> {
   final _amountController = TextEditingController();
 
-  void _handleTopUp() {
+  void _handleTopUp() async {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -21,7 +21,8 @@ class _TopUpScreenState extends State<TopUpScreen> {
       return;
     }
 
-    final success = context.read<WalletProvider>().topUp(amount, 'Bank Deposit');
+    final success = await context.read<WalletProvider>().topUp(amount, 'Bank Deposit');
+    if (!mounted) return;
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Top Up Successful!'), backgroundColor: Color(0xFF10B981)),

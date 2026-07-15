@@ -2,8 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/wallet_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WalletProvider>().fetchDashboard();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,6 +24,9 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF0D0F14),
       body: Consumer<WalletProvider>(
         builder: (context, wallet, child) {
+          if (wallet.isLoading) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF00F2FE)));
+          }
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

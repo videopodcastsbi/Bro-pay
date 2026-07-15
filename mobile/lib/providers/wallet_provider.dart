@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class Transaction {
   final String id;
@@ -16,62 +18,95 @@ class Transaction {
     required this.amount,
     required this.date,
   });
+
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    return Transaction(
+      id: json['id'].toString(),
+      type: json['type'] ?? '',
+      category: json['category'] ?? '',
+      name: json['name'] ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
+    );
+  }
 }
 
 class WalletProvider with ChangeNotifier {
   double _balance = 0.0;
   double _income = 0.0;
   double _expense = 0.0;
-  final List<Transaction> _transactions = [];
+  List<Transaction> _transactions = [];
+  bool _isLoading = false;
 
   double get balance => _balance;
   double get income => _income;
   double get expense => _expense;
-  List<Transaction> get transactions => [..._transactions].reversed.toList();
+  List<Transaction> get transactions => _transactions;
+  bool get isLoading => _isLoading;
 
-  bool topUp(double amount, String name) {
-    if (amount <= 0) return false;
-    _income += amount;
-    _balance += amount;
-    _addTransaction('income', 'Top Up', name, amount);
-    return true;
-  }
+  final String baseUrl = 'http://localhost:3000/api';
 
-  bool transfer(double amount, String recipientName) {
-    if (amount <= 0 || _balance < amount) return false;
-    _expense += amount;
-    _balance -= amount;
-    _addTransaction('expense', 'Transfer', recipientName, amount);
-    return true;
-  }
-
-  bool withdraw(double amount, String name) {
-    if (amount <= 0 || _balance < amount) return false;
-    _expense += amount;
-    _balance -= amount;
-    _addTransaction('expense', 'Withdraw', name, amount);
-    return true;
-  }
-
-  bool receive(double amount, String senderName) {
-    if (amount <= 0) return false;
-    _income += amount;
-    _balance += amount;
-    _addTransaction('income', 'Receive', senderName, amount);
-    return true;
-  }
-
-  void _addTransaction(String type, String category, String name, double amount) {
-    _transactions.add(
-      Transaction(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        type: type,
-        category: category,
-        name: name,
-        amount: amount,
-        date: DateTime.now(),
-      ),
-    );
+  Future<void> fetchDashboard() async {
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/dashboard'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _balance = (data['balance'] ?? 0).toDouble();
+        _income = (data['income'] ?? 0).toDouble();
+        _expense = (data['expense'] ?? 0).toDouble();
+        
+        if (data['transactions'] != null) {
+          _transactions = (data['transactions'] as List)
+              .map((tx) => Transaction.fromJson(tx))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching dashboard: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<bool> topUp(double amount, String name) async {
+    return _createTransaction('topup', amount, name);
+  }
+
+  Future<bool> transfer(double amount, String recipientName) async {
+    return _createTransaction('transfer', amount, recipientName);
+  }
+
+  Future<bool> withdraw(double amount, String name) async {
+    return _createTransaction('withdraw', amount, name);
+  }
+
+  Future<bool> _createTransaction(String action, double amount, String target) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/transactions'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'action': action,
+          'amount': amount,
+          'target': target,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Refresh dashboard to get latest accurate state from server
+        await fetchDashboard();
+        return true;
+      } else {
+        debugPrint('Transaction failed: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error creating transaction: $e');
+      return false;
+    }
   }
 }
